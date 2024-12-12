@@ -1,5 +1,5 @@
 use anyhow::{self, Context};
-use std::{any, cmp::Ordering, collections::HashMap, fs, io::{BufRead, BufReader}};
+use std::{cmp::Ordering, collections::HashMap, fs, io::{BufRead, BufReader}};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct Page {
@@ -90,7 +90,6 @@ impl Data {
 
 pub fn part_one() -> anyhow::Result<i32> {
     let data = Data::parse_input()?;
-    
     let result = data.updates
         .iter()
         .filter(|update| update.is_sorted_by(|a,b| a.valid_ordering(b, &data.adj)))
@@ -102,7 +101,6 @@ pub fn part_one() -> anyhow::Result<i32> {
 
 pub fn part_two() -> anyhow::Result<i32> {
     let mut data = Data::parse_input()?;
-
     let result = data.updates
         .iter_mut()
         .filter(|update| !update.is_sorted_by(|a,b| a.valid_ordering(b, &data.adj)))
