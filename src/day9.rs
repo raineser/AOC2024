@@ -83,49 +83,63 @@ pub fn part_one() -> anyhow::Result<i64> {
 
 pub fn part_two() -> anyhow::Result<i64> {
     let mut data = Data_Two::parse_input()?;
-    let mut remaining_free  = BTreeMap::new();
-
-    for &(index, size) in &data.frees {
-        remaining_free.insert(index, size);
-    }
-
+    let mut res = 0;
     let mut disk = Vec::new();
-
-    for &(id, index, size) in data.files.iter().rev() {
-
-        let free = remaining_free
+    
+    while let Some(mut file) = data.files.pop() {
+        let next_free = data.frees
             .iter()
-            .take_while(|&(&free_index, _)| free_index < id)
-            .find(|&(_, &s)| s >= size);
+            .take_while(|&(&free_index, &free)| {
+                free_index < file.disk_index
+            })
+            .find(|(&free_index, &free)| free.size >= file.size);
 
-        if let Some((&free_id, &free_size)) = free {
-            disk.push((id, free_id, size));
-            remaining_free.remove(&free_id);
-            if free_size > size {
-                remaining_free.insert(free_id + size, free_size - size);
+        if let Some((&free_index, &free)) = next_free {
+            file.disk_index = free_index;
+            disk.push(file);
+            data.frees.remove(&free_index);
+            if free.size > file.size {
+                data.frees.insert(free_index + file.size, Free{size: free.size - file.size});
             }
-        
         } else {
-            disk.push((id, index, size));
+            disk.push(file);
         }
-
     }
 
-    let res = disk
-        .iter()
-        .map(|&(file_id, file_block_id, file_size)| {
-            (file_block_id..(file_block_id + file_size))
-                .map(|block_id| file_id * block_id)
-                .sum::<i64>()
-        })
+    let res = disk.iter()
+        .map(|file| file.sum())
         .sum();
     Ok(res)
 
 }
 
+#[derive(Copy, Clone)]
+struct File {
+    id: i64,
+    disk_index: i64,
+    size: i64
+}
+
+impl File {
+    fn sum(&self) -> i64{
+        let mut index = self.disk_index;
+        let mut sum = 0;
+        for _ in 0..self.size {
+            sum += (index * self.id);
+            index += 1;
+        }
+        sum
+    }
+}
+
+#[derive(Copy, Clone)]
+struct Free {
+    size: i64
+}
+
 struct Data_Two {
-    files: Vec<(i64, i64, i64)>, 
-    frees: Vec<(i64, i64)>
+    files: Vec<File>, 
+    frees: BTreeMap<i64, Free>
 }
 
 impl Data_Two {
@@ -137,19 +151,19 @@ impl Data_Two {
         buf.push('0' as u8);
         
         let mut files = Vec::new();
-        let mut frees = Vec::new();
-        let mut index = 0;
+        let mut frees = BTreeMap::new();
+        let mut disk_index = 0;
         for (id, chunk) in buf.chunks_exact(2).enumerate() {
             if let Some(size) = (chunk[0] as char).to_digit(10) {
                 if size > 0 {
-                    files.push((id as i64, index as i64, size as i64));
-                    index += size;
+                    files.push(File{id: id as i64, disk_index: disk_index as i64, size: size as i64});
+                    disk_index += size;
                 }
             }
             if let Some(size) = (chunk[1] as char).to_digit(10) {
                 if size > 0 {
-                    frees.push((index as i64 ,size as i64));
-                    index += size;
+                    frees.insert(disk_index as i64, Free{size: size as i64});
+                    disk_index += size;
                 }
             }
         }
