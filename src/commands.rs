@@ -81,14 +81,27 @@ pub enum Commands {
         one: bool,
         #[clap(long = "two")]
         two: bool
-    },day13 {
+    },
+    day13 {
+        #[clap(long = "one")]
+        one: bool,
+        #[clap(long = "two")]
+        two: bool
+    },
+    day14 {
+        #[clap(long = "one")]
+        one: bool,
+        #[clap(long = "two")]
+        two: bool
+    },
+    day15 {
         #[clap(long = "one")]
         one: bool,
         #[clap(long = "two")]
         two: bool
     }
-
 }
+
 
 pub fn handle_command(command: Commands) -> anyhow::Result<()> {
     match command {
@@ -194,6 +207,22 @@ pub fn handle_command(command: Commands) -> anyhow::Result<()> {
             }
             if two {
                 println!("{}", day13::part_two()?);
+            }
+        },
+        Commands::day14 { one, two } => {
+            if one {
+                println!("{}", day14::part_one()?);
+            }
+            if two {
+                println!("{}", day14::part_two()?);
+            }
+        },
+        Commands::day15 { one, two } => {
+            if one {
+                println!("{}", day15::part_one()?);
+            }
+            if two {
+                println!("{}", day15::part_two()?);
             }
         },
         
