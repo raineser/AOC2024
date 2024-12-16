@@ -80,5 +80,44 @@ fn dfs(grid: &Vec<Vec<char>>, curr: (i64,i64), dir: &[(i64,i64); 4], dir_index: 
 
 
 pub fn part_two() -> anyhow::Result<i64> {
-    todo!()
+    let mut data = Data::parse_input()?;
+    let mut curr = data.start;
+    let mut dir = [(0,1), (1,0), (0,-1), (-1,0)];
+    let mut res = i64::MAX;
+    let mut heap = BinaryHeap::new();
+    heap.push((Reverse(0), curr.0, curr.1, 0 as usize, Vec::new()));
+    let mut scores = HashMap::new();
+    let mut min_path = HashSet::new();
+    
+    while let Some((score, i, j, index, mut path)) = heap.pop() {
+        path.push((i,j));
+        
+        if data.grid[i as usize][j as usize] == 'E' {
+            if score.0 <= res {
+                res = score.0;
+                 min_path.extend(path);
+            }
+            continue
+        }
+        
+        if data.grid[i as usize][j as usize] == '#' {
+            continue
+        }
+        
+        if let Some(val) = scores.get(&(i,j,index)) {
+            if *val < score.0 {
+                continue
+            }
+        }
+        
+        scores.insert((i,j,index), score.0);
+        
+        let right = (index + 1) % 4;
+        let left = index.checked_sub(1).unwrap_or(3);
+        heap.push((Reverse(score.0 + 1), i + dir[index].0, j + dir[index].1, index, path.clone()));
+        heap.push((Reverse(score.0 + 1001), i + dir[right].0, j + dir[right].1 , right, path.clone()));
+        heap.push((Reverse(score.0 + 1001), i + dir[left].0, j + dir[left].1 , left, path));
+    }
+
+    Ok(min_path.len() as i64)
 }
