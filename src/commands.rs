@@ -242,7 +242,7 @@ pub fn handle_command(command: Commands) -> anyhow::Result<()> {
                 println!("{}", day16::part_one()?);
             }
             if two {
-                println!("{:?}", day16::part_two()?);
+                println!("{}", day16::part_two()?);
             }
         },
         Commands::day17 { one, two } => {
@@ -250,7 +250,7 @@ pub fn handle_command(command: Commands) -> anyhow::Result<()> {
                 println!("{}", day17::part_one()?);
             }
             if two {
-                println!("{:?}", day17::part_two()?);
+                println!("{}", day17::part_two()?);
             }
         },
         

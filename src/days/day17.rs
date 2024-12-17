@@ -14,8 +14,8 @@ enum opcode {
 }
 #[derive(Debug, Clone, Copy)]
 enum Combo {
-    register(usize),
-    literal(i64)
+    Register(usize),
+    Literal(i64)
 }
 
 #[derive(Debug)]
@@ -51,10 +51,10 @@ impl Cpu {
         for instruction in numbers.chunks_exact(2) {
             let combo: anyhow::Result<Combo> = match instruction[1] {
                 0..=3 => {
-                    Ok(Combo::literal(instruction[1]))
+                    Ok(Combo::Literal(instruction[1]))
                 },
                 4..=6 => {
-                    Ok(Combo::register(instruction[1] as usize - 4))
+                    Ok(Combo::Register(instruction[1] as usize - 4))
                 },
                 _ => {anyhow::bail!("Invalid combo")}
             };
@@ -95,40 +95,39 @@ impl Cpu {
 
 pub fn part_one() -> anyhow::Result<String> {
     let mut cpu = Cpu::parse_input()?;
-    println!("{:?}", cpu.program);
     let mut res= String::new();
     
     while cpu.pc < cpu.program.len() {
         match cpu.program[cpu.pc] {
             opcode::adv(combo) => {
                 let denominator = match combo {
-                    Combo::register(index) => {2_i64.pow(cpu.registers[index] as u32)},
-                    Combo::literal(value) => {2_i64.pow(value as u32)},
+                    Combo::Register(index) => {2_i64.pow(cpu.registers[index] as u32)},
+                    Combo::Literal(value) => {2_i64.pow(value as u32)},
                 };
                 cpu.registers[0] /= denominator;
             },
             opcode::bxl(combo) => {
                 let left = match combo {
-                    Combo::register(index) => {index as i64 + 4},
-                    Combo::literal(value) => {value},
+                    Combo::Register(index) => {index as i64 + 4},
+                    Combo::Literal(value) => {value},
                 };
                 cpu.registers[1] ^= left;
             },
             opcode::bst(combo) => {
                 let left = match combo {
-                    Combo::register(index) => {cpu.registers[index] % 8},
-                    Combo::literal(value) => {value % 8}
+                    Combo::Register(index) => {cpu.registers[index] % 8},
+                    Combo::Literal(value) => {value % 8}
                 };
                 cpu.registers[1] = left;
             },
             opcode::jnz(combo) => {
                 if cpu.registers[0] > 0 {
                     let jump = match combo {
-                        Combo::register(index) => {(index as i64 + 4) / 2},
-                        Combo::literal(value) => {value / 2},
+                        Combo::Register(index) => {(index as i64 + 4) / 2},
+                        Combo::Literal(value) => {value / 2},
                     };
                     if jump % 2 != 0 {
-                        anyhow::bail!("invlaid jump")
+                        anyhow::bail!("invalid jump")
                     }
                     cpu.pc = jump as usize;
                     continue;
@@ -141,23 +140,23 @@ pub fn part_one() -> anyhow::Result<String> {
             },
             opcode::out(combo) => {
                 let output = match combo {
-                    Combo::register(index) => {cpu.registers[index] % 8},
-                    Combo::literal(value) => {value % 8},
+                    Combo::Register(index) => {cpu.registers[index] % 8},
+                    Combo::Literal(value) => {value % 8},
                 };
                 res.push_str(&output.to_string());
                 res.push(',');
             },
             opcode::bdv(combo) => {
                 let denominator = match combo {
-                    Combo::register(index) => {2_i64.pow(cpu.registers[index] as u32)},
-                    Combo::literal(value) => {2_i64.pow(value as u32)},
+                    Combo::Register(index) => {2_i64.pow(cpu.registers[index] as u32)},
+                    Combo::Literal(value) => {2_i64.pow(value as u32)},
                 };
                 cpu.registers[1] = cpu.registers[0] / denominator;
             },
             opcode::cdv(combo) => {
                 let denominator = match combo {
-                    Combo::register(index) => {2_i64.pow(cpu.registers[index] as u32)},
-                    Combo::literal(value) => {2_i64.pow(value as u32)},
+                    Combo::Register(index) => {2_i64.pow(cpu.registers[index] as u32)},
+                    Combo::Literal(value) => {2_i64.pow(value as u32)},
                 };
                 cpu.registers[2] = cpu.registers[0] / denominator;
             },
@@ -169,6 +168,32 @@ pub fn part_one() -> anyhow::Result<String> {
 }
 
 
-pub fn part_two() -> anyhow::Result<String> {
-    todo!()
+pub fn part_two() -> anyhow::Result<i64> {
+    let program = vec![2,4,1,5,7,5,1,6,0,3,4,6,5,5,3,0];
+    let mut possible = vec![0];
+    
+    for i in (0..program.len()).rev() {
+        let mut temp = Vec::new();
+        for j in 0..8 {
+            for val in &possible {
+                let mut curr = val << 3;
+                curr |= j;
+                if hard_coded(curr) == program[i] {
+                    temp.push(curr);
+                }
+            }
+        }
+        possible = temp;
+    }
+    possible.sort_unstable();
+    Ok(possible[0])
+}
+
+fn hard_coded(a: i64) -> i64 {
+    let mut b = a % 8;
+    b = b ^ 5;
+    let mut c = a / (2_i64.pow(b as u32));
+    b = b ^ 6;
+    b  = b ^ c;
+    b % 8
 }
