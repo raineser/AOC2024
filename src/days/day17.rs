@@ -39,7 +39,7 @@ impl Cpu {
                     registers[index] = line[colon + 1..].trim().parse::<i64>()?;
                 }
             } else {
-                if let Some((text, nums)) = line.split_once(':') {
+                if let Some((_, nums)) = line.split_once(':') {
                     for num in nums.split(',') {
                         numbers.push(num.trim().parse::<i64>()?);
                     }
