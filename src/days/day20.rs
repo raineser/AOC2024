@@ -225,14 +225,12 @@ fn valid_20_cheat(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64
 pub fn part_two() -> anyhow::Result<i64> {
    let mut data = Data::parse_input()?;
    let distance = path_distance(&data)?;
-   let mut cheats = HashMap::new();
    let mut res = 0;
 
     for i in 1..data.grid.len() - 1 {
         for j in 1..data.grid[0].len() - 1 {
             if data.grid[i][j] == '.' {
-                for ((row, col, saved)) in valid_20_cheats(&data.grid, i as i64, j as i64, &distance, 20) {
-                    *cheats.entry(saved).or_insert(0) += 1;
+                for ((row, col, saved)) in valid_cheats(&data.grid, i as i64, j as i64, &distance, 20) {
                     if saved >= 100 {
                         res += 1;
                     }
@@ -240,9 +238,9 @@ pub fn part_two() -> anyhow::Result<i64> {
             }
         }
     }
-    let mut d = cheats.into_iter().map(|(key, value)| (key, value)).collect::<Vec<(i64,i64)>>();
-    d.sort();
-    println!("{:?}", d);
+    //et mut d = cheats.into_iter().map(|(key, value)| (key, value)).collect::<Vec<(i64,i64)>>();
+    //d.sort();
+    //println!("{:?}", d);
     Ok(res)
 }
     
@@ -251,8 +249,8 @@ pub fn part_two() -> anyhow::Result<i64> {
 fn valid_cheats(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64,i64), i64>, max_count: i64) -> Vec<(i64,i64,i64)> {
     let mut cheats = Vec::new();
     let mut visit = HashSet::new();
-
     let mut q = VecDeque::new();
+
     for dir in [(1,0), (-1,0), (0,1), (0, -1)] {
         let row = i + dir.0;
         let col = j + dir.1;
@@ -273,7 +271,6 @@ fn valid_cheats(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64,i
         if count == max_count{
             continue;
         }
-        //let mut max = 0;
         for dir in [(1,0), (-1,0), (0,1), (0, -1)] {
             let row = r + dir.0;
             let col = c + dir.1;
