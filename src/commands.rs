@@ -123,6 +123,12 @@ pub enum Commands {
         one: bool,
         #[clap(long = "two")]
         two: bool
+    },
+    day20 {
+        #[clap(long = "one")]
+        one: bool,
+        #[clap(long = "two")]
+        two: bool
     }
 }
 
@@ -279,6 +285,14 @@ pub fn handle_command(command: Commands) -> anyhow::Result<()> {
             }
             if two {
                 println!("{:?}", day19::part_two()?);
+            }
+        },
+        Commands::day20 { one, two } => {
+            if one {
+                println!("{}", day20::part_one()?);
+            }
+            if two {
+                println!("{:?}", day20::part_two()?);
             }
         },
         
