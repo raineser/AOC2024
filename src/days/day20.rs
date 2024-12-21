@@ -225,27 +225,31 @@ fn valid_20_cheat(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64
 pub fn part_two() -> anyhow::Result<i64> {
    let mut data = Data::parse_input()?;
    let distance = path_distance(&data)?;
+   let mut cheats = HashMap::new();
    let mut res = 0;
+   let mut cheat_set = HashSet::new();
 
     for i in 1..data.grid.len() - 1 {
         for j in 1..data.grid[0].len() - 1 {
             if data.grid[i][j] == '.' {
                 for ((row, col, saved)) in valid_cheats(&data.grid, i as i64, j as i64, &distance, 20) {
-                    if saved >= 100 {
-                        res += 1;
+                    if !cheat_set.contains(&(row, col, i, j)) {
+                        if saved >= 100 {
+                            res += 1;
+                        }
+                        cheat_set.insert((row, col, i, j));
+                        *cheats.entry(saved).or_insert(0) += 1;
                     }
                 }
             }
         }
     }
-    //et mut d = cheats.into_iter().map(|(key, value)| (key, value)).collect::<Vec<(i64,i64)>>();
-    //d.sort();
-    //println!("{:?}", d);
+    let mut d = cheats.into_iter().map(|(key, value)| (key, value)).collect::<Vec<(i64,i64)>>();
+    d.sort();
+    println!("{:?}", d);
     Ok(res)
 }
     
-
-
 fn valid_cheats(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64,i64), i64>, max_count: i64) -> Vec<(i64,i64,i64)> {
     let mut cheats = Vec::new();
     let mut visit = HashSet::new();
@@ -264,6 +268,7 @@ fn valid_cheats(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64,i
         if grid[row as usize][col as usize] == '.' {
             continue;
         }
+        visit.insert((row, col));
         q.push_back((row, col, 1));
     }
     
@@ -281,22 +286,48 @@ fn valid_cheats(grid: &Vec<Vec<char>>, i: i64, j: i64, distance: &HashMap<(i64,i
             if col <= 0 || col >= grid[0].len() as i64 -1 {
                 continue;
             }
-            if let Some(&dist) = distance.get(&(row, col)) {
-                if let Some(&start) = distance.get(&(i,j)) {
-                    if start != dist && dist - (start + count + 1) > 0 {
-                        cheats.push((r,c, dist - (start + count + 1)));
-                    }
-                }
 
+            if !visit.contains(&(row,col)) { 
+                if let Some(&dist) = distance.get(&(row, col)) {
+                    if let Some(&start) = distance.get(&(i,j)) {
+                        if start != dist && dist - (start + count + 1) > 0 {
+                            cheats.push((r,c, dist - (start + count + 1)));
+                            visit.insert((row,col));
+                        }
+                    }
+
+                }
             }
+
             if grid[row as usize][col as usize] == '#' {
                 if !visit.contains(&(row,col)) {
                     q.push_back((row, col, count + 1));
                     visit.insert((row,col));
                 }
             }
-
         }
     }
     cheats
 }
+
+
+/*
+There are 32 cheats that save 50 picoseconds.
+There are 31 cheats that save 52 picoseconds.
+There are 29 cheats that save 54 picoseconds.
+There are 39 cheats that save 56 picoseconds.
+There are 25 cheats that save 58 picoseconds.
+There are 23 cheats that save 60 picoseconds.
+There are 20 cheats that save 62 picoseconds.
+There are 19 cheats that save 64 picoseconds.
+There are 12 cheats that save 66 picoseconds.
+There are 14 cheats that save 68 picoseconds.
+There are 12 cheats that save 70 picoseconds.
+There are 22 cheats that save 72 picoseconds.
+There are 4 cheats that save 74 picoseconds.
+There are 3 cheats that save 76 picoseconds.
+ */
+
+
+
+ 
