@@ -2,7 +2,8 @@ use anyhow;
 use std::io::{BufRead, BufReader};
 use std::{fs, usize};
 use std::collections::{BinaryHeap, HashMap, VecDeque, HashSet};
-use std::cmp::Reverse;
+use std::cmp::{self, max, Reverse};
+
 
 /*
 +---+---+---+
@@ -54,64 +55,85 @@ impl Data {
     
 }
 
-
-
 pub fn part_one() -> anyhow::Result<i64> {
     let data = Data::parse_input()?;
     let mut res = 0;
     
     for (code, value) in data.codes {
-        let mut best_paths = Vec::new();
+        let mut remaining_paths = Vec::new();
+        // first pass
+        dfs_path(&data.key_adj, &code, 'A', 0, &mut usize::MAX, Vec::new(), &mut remaining_paths, &mut HashMap::new());
 
-        dfs_path(&data.key_adj, &code, 'A', 0, &mut usize::MAX, Vec::new(), &mut best_paths);
-
-        let mut next_best_paths = Vec::new();
-        let mut min = usize::MAX;
-        
-        for code in best_paths {
-            let mut bests = Vec::new();
-            dfs_path(&data.dir_adj, &code, 'A', 0, &mut min, Vec::new(), &mut bests);
-            next_best_paths.append(&mut bests);
-            next_best_paths.retain(|path| path.len() == min);
+        let mut final_min = 0;
+        for i in 0..2 {
+            let mut curr_min = usize::MAX;
+            let mut best_paths = Vec::new();
+            for code in remaining_paths {
+                let mut bests = Vec::new();
+                dfs_path(&data.dir_adj, &code, 'A', 0, &mut curr_min, Vec::new(), &mut bests, &mut HashMap::new());
+                best_paths.append(&mut bests);
+                best_paths.retain(|path| path.len() == curr_min);
+            }
+            remaining_paths = best_paths;
+            final_min = cmp::max(curr_min, final_min);
+            println!("{i}");
         }
 
-        let mut min  = usize::MAX;
-        for code in next_best_paths {
-            let mut bests = Vec::new();
-            dfs_path(&data.dir_adj, &code, 'A', 0, &mut min, Vec::new(), &mut bests);
-        }
-
-        res += min as i64  * value;
+        res += final_min as i64 * value;
     }
     Ok(res)
 }
 
-//<A^A>^^AvvvA, <A^A^>^AvvvA, and <A^A^^>AvvvA.
+/* 
+fn dfs(adj: &HashMap<char, Vec<(char, char)>>, code: &Vec<char>, count: usize, max_count: usize) -> usize {
+    if count == max_count {
+        return 0
+    }
 
-
-fn dfs_path(adj: &HashMap<char, Vec<(char, char)>>, code: &Vec<char>, curr: char, index: usize, min: &mut usize, mut path: Vec<char>, best_paths: &mut Vec<Vec<char>> ) {
+    let mut remaining_paths = Vec::new();
+    let mut min = 0;
+    dfs_path(adj, code, 'A', 0, min, path, best_paths, cache);
     
+
+    todo!()
+}
+*/
+
+
+fn dfs_path(adj: &HashMap<char, Vec<(char, char)>>, code: &Vec<char>, curr: char, 
+    index: usize, min: &mut usize, mut path: Vec<char>, best_paths: &mut Vec<Vec<char>>, cache: &mut HashMap<usize, usize> ) 
+{
     if index == code.len() {
         if path.len() < *min {
             *min = path.len();
             best_paths.clear();
         }
-
         if path.len() == *min {
             best_paths.push(path);
         }
         return
     }
 
+    if let Some(&best) = cache.get(&index) {
+        if best < path.len() {
+            return
+        }
+    }
+
     for mut p_path in shortest_num_path(adj, curr, code[index]).iter_mut() {
         let mut new_path = path.clone();
         new_path.append(&mut p_path);
-        dfs_path(adj, code, code[index], index + 1, min, new_path, best_paths);
+        dfs_path(adj, code, code[index], index + 1, min, new_path, best_paths, cache);
     }
+
+    cache.insert(index, *min);
+
 }
 
-fn shortest_num_path(adj: &HashMap<char, Vec<(char, char)>>, start: char, end: char) -> Vec<Vec<char>> {
 
+
+
+fn shortest_num_path(adj: &HashMap<char, Vec<(char, char)>>, start: char, end: char) -> Vec<Vec<char>> {
     let mut q = BinaryHeap::new();
     q.push((Reverse(0), start, Vec::new()));
     let mut visit = HashMap::new();
@@ -130,13 +152,11 @@ fn shortest_num_path(adj: &HashMap<char, Vec<(char, char)>>, start: char, end: c
             }
             continue;
         }
-
         if let Some(&best) = visit.get(&(c)) {
             if best < count.0 {
                 continue;
             }
         }
-
         visit.insert(c, count.0);
         if let Some(nums) = adj.get(&c) {
             for (next_c, dir) in nums {
