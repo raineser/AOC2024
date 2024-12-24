@@ -66,5 +66,64 @@ pub fn part_one() -> anyhow::Result<i64> {
 
 
 pub fn part_two() -> anyhow::Result<i64> {
-    todo!()
+    let data = Data::parse_input()?;
+    let mut lan= Vec::new();
+
+    for (key, value) in &data.adj {
+        for node in value {
+            let mut visit = HashSet::new();
+            let mut path = vec![node.clone()];
+            visit.insert(node.clone());
+            dfs(&data.adj, node, key, &mut path, &mut lan, &mut visit, &mut HashSet::new())
+        }
+    }
+    
+    lan.sort();
+    for pc in &lan {
+        print!("{},",pc)
+    }
+    println!("");
+    //println!("{:?}", lan);
+    Ok(lan.len() as i64)
+}
+
+
+fn dfs(adj: &HashMap<String, HashSet<String>>, curr: &String, start: &String, path: &mut Vec<String>, lan: &mut Vec<String>, visit: &mut HashSet<String>, cache: &mut HashSet<Vec<String>>) {
+
+    if cache.contains(path) {
+        return
+    }
+    
+    let valid = path.iter().all(|node| {
+        if node == curr {
+            true
+        } else if let Some(nodes) = adj.get(curr) {
+            nodes.contains(node)
+        } else {
+            false
+        }
+    });
+
+    if valid {
+        if path.len() > lan.len() {
+            let mut saved_path = path.clone();
+            lan.clear();
+            lan.append(&mut saved_path);
+            println!("{:?}", lan);
+        }
+        cache.insert(path.clone());
+    } else {
+        return
+    }
+    if let Some(neighbors) = adj.get(curr) {
+        for neighbor in neighbors {
+            if !visit.contains(neighbor) {
+                visit.insert(neighbor.clone());
+                path.push(neighbor.clone());
+                dfs(adj, neighbor, start, path, lan, visit, cache);
+                visit.remove(neighbor);
+                path.pop();
+            }
+        }
+    }
 }
